@@ -11,10 +11,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo/metro-runtime": "^57.0.15",
     "expo": "latest",
+    "expo-image-picker": "^57.0.16",
     "expo-status-bar": "latest",
     "react": "latest",
-    "react-native": "latest"
+    "react-dom": "^19.2.8",
+    "react-native": "latest",
+    "react-native-web": "^0.21.2"
   },
   "devDependencies": {
     "@types/react": "latest",
