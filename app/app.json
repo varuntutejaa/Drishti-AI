@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Drishti AI",
+    "slug": "drishti-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "drishtiai",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.varuntuteja.drishtiai"
+    },
+    "android": {
+      "package": "com.varuntuteja.drishtiai",
+      "adaptiveIcon": {
+        "backgroundColor": "#0f766e"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "apiUrl": "http://localhost:8010"
+    }
+  }
+}
