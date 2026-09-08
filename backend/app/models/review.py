@@ -1,0 +1,12 @@
+from sqlalchemy import Column, DateTime, Integer, String, Text
+from sqlalchemy.sql import func
+from app.database.database import Base
+
+class OphthalmologistReview(Base):
+    __tablename__ = "ophthalmologist_reviews"
+    id = Column(Integer, primary_key=True)
+    screening_id = Column(Integer, index=True)
+    decision = Column(String)
+    notes = Column(Text, default="")
+    final_assessment = Column(String, default="")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
