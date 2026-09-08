@@ -3,6 +3,8 @@ dist/
 backend/.venv/
 backend/retina_ai.db
 backend/uploads/
+app/.expo/
+app/node_modules/
 __pycache__/
 *.pyc
 .DS_Store
