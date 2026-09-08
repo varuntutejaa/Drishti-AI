@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
+import Constants from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import {
   Alert,
@@ -11,13 +12,16 @@ import {
   View,
 } from 'react-native';
 
+const API_URL = Constants.expoConfig?.extra?.apiUrl ?? 'http://localhost:8010';
+
 export default function App() {
   const [showImageOptions, setShowImageOptions] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function uploadImage() {
-    setSubmitted(false);
+    setStatus('');
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -30,7 +34,7 @@ export default function App() {
   }
 
   async function clickImage() {
-    setSubmitted(false);
+    setStatus('');
     const permission = await ImagePicker.requestCameraPermissionsAsync();
 
     if (!permission.granted) {
@@ -48,13 +52,67 @@ export default function App() {
     }
   }
 
-  function submitImage() {
+  async function submitImage() {
     if (!imageUri) {
       Alert.alert('No image selected', 'Please upload or click an image before submitting.');
       return;
     }
 
-    setSubmitted(true);
+    setIsSubmitting(true);
+    setStatus('Creating screening record...');
+
+    try {
+      const screeningResponse = await fetch(`${API_URL}/api/v1/screenings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patient_id: 'MOBILE-001', eye: 'Right' }),
+      });
+
+      if (!screeningResponse.ok) {
+        throw new Error('Could not create screening record.');
+      }
+
+      const screening = await screeningResponse.json();
+      const filename = imageUri.split('/').pop() || `fundus-${Date.now()}.jpg`;
+      const extension = filename.split('.').pop()?.toLowerCase();
+      const mimeType = extension === 'png' ? 'image/png' : 'image/jpeg';
+      const formData = new FormData();
+
+      formData.append('file', {
+        uri: imageUri,
+        name: filename,
+        type: mimeType,
+      } as unknown as Blob);
+
+      setStatus('Uploading image to backend...');
+
+      const uploadResponse = await fetch(`${API_URL}/api/v1/screenings/${screening.id}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Image upload failed.');
+      }
+
+      setStatus('Running image quality check...');
+
+      const qualityResponse = await fetch(`${API_URL}/api/v1/screenings/${screening.id}/quality`, {
+        method: 'POST',
+      });
+
+      if (!qualityResponse.ok) {
+        throw new Error('Quality check failed.');
+      }
+
+      const quality = await qualityResponse.json();
+      setStatus(`Image sent. Quality score: ${Math.round(quality.quality_score * 100)}/100`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to send image.';
+      setStatus(`${message} Check backend URL: ${API_URL}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -82,13 +140,15 @@ export default function App() {
 
             {imageUri && <Image source={{ uri: imageUri }} style={styles.preview} />}
 
-            <Pressable style={[styles.submitButton, !imageUri && styles.disabledButton]} onPress={submitImage}>
-              <Text style={styles.submitButtonText}>Submit</Text>
+            <Pressable
+              style={[styles.submitButton, (!imageUri || isSubmitting) && styles.disabledButton]}
+              onPress={submitImage}
+              disabled={isSubmitting}
+            >
+              <Text style={styles.submitButtonText}>{isSubmitting ? 'Submitting...' : 'Submit'}</Text>
             </Pressable>
 
-            {submitted && (
-              <Text style={styles.successText}>Image submitted for Drishti AI screening.</Text>
-            )}
+            {status && <Text style={styles.successText}>{status}</Text>}
           </View>
         )}
       </View>
